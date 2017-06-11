@@ -1,0 +1,95 @@
+pragma solidity ^0.4.0;
+
+import "Host.sol";
+
+contract _0xGG {
+    
+    address private owner;
+    uint256 private balance = 0;
+    
+    uint private current_ads_length = 0;
+    mapping(uint => Bidder) private ads;
+    mapping(address => uint) private ads_address;
+    mapping(address => Host) private hosts;
+    //bytes32 url;
+    
+    function getNextAd() private returns(uint){
+
+        uint256 sum = 0;
+        uint i = 0;
+        for (i = 0; i < current_ads_length; i++) {
+            sum += ads[i].wei_bid();
+        }
+        uint256 random_number = uint256(block.blockhash(block.number-1)) % sum;
+        
+        sum = ads[0].wei_bid();
+        i = 0;
+        while (sum < random_number) {
+            sum += ads[i].wei_bid();
+            i++;
+        }
+        return i;
+    }
+    
+    modifier check_funds(uint256 wei_bid) {
+        //if (msg.value < wei_bid) {
+        //    throw;
+        //}
+        _;
+    }
+    
+    function _0xGG() {
+        owner = msg.sender;
+        //url = "kokos"; //"kokos.com.cs.ucy.ac.in.it.kokos.yc.cy");
+    }
+    
+    function addAd(bytes32 url, uint256 wei_bid) check_funds(wei_bid) payable {  
+        
+        // create new bidder object
+        Bidder bidder = new Bidder(msg.sender, msg.value, wei_bid, url, now);
+        ads_address[msg.sender] = current_ads_length;
+        ads[current_ads_length] = bidder;
+        current_ads_length++;
+        return;
+    }
+
+    function getAd() constant returns(bytes32, uint) {
+        Host host = new Host(msg.sender);
+        hosts[msg.sender] = host;
+        uint ad_idx = getNextAd();
+        
+        return (ads[ad_idx].url(), ad_idx);
+    }
+    
+    modifier ad_exits(uint ad_idx) {
+        if (false) {
+            throw;
+        }
+        _;
+    }
+    
+    function confirmGetAd(uint ad_idx, address _host) ad_exits(ad_idx) {
+        // check if url exist
+        // check if host exists
+        Bidder bidder = ads[ad_idx];
+        Host host = hosts[_host];
+        uint256 payed = host.pay(bidder);
+        balance += bidder.wei_bid() - payed;
+        return;
+    }
+    
+    function getHostBalance() constant returns(uint256) {
+        return hosts[msg.sender].getBalance();
+    }
+    
+    function getBidderBalance() constant returns(uint256) {
+        uint ad_idx = ads_address[msg.sender];
+        return ads[ad_idx].getBalance();
+    }
+    
+    function get0xGGBalance() constant returns(uint256) {
+        return balance;
+    }
+    
+}
+
