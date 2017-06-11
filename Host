@@ -1,0 +1,32 @@
+pragma solidity ^0.4.0;
+
+import "Bidder.sol";
+
+contract Host {
+    
+    address user;
+    uint256 public balance;
+    
+    function Host(address newUser) {
+        user = newUser;
+    }
+    
+    modifier check_balance(uint256 wei_count, uint256 wei_bid) {
+        if (wei_count < wei_bid) {
+            // refund
+            throw;
+        }
+        _;
+    }
+    
+    function pay(Bidder bidder) check_balance(bidder.wei_count(), bidder.wei_bid()) returns(uint256) {
+        bidder.subtractFunds();
+        uint256 payment = (bidder.wei_count() * 4 / 5);
+        balance += payment;
+        return payment;
+    }
+    
+    function getBalance() returns(uint256) {
+        return balance;
+    }
+}
